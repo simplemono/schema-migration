@@ -51,7 +51,6 @@
                   tx (:datomic/tx (tx-fn (assoc w
                                                 :datomic/db
                                                 db)))]
-              (assert (seq tx))
               @(d/transact con
                            (cons
                              [:db/add 0 :schema/applied-migrations migration-keyword]
