@@ -48,19 +48,28 @@
             (let [tx-fn (get-in migrations
                                 [migration-keyword
                                  :tx-fn])
+                  w* (assoc w
+                            :datomic/db
+                            db)
+                  result (try
+                           (tx-fn w*)
+                           (catch Exception e
+                             (throw (ex-info
+                                     "simplemono.schema-migration.core/migrate! tx-fn invocation failed"
+                                     {:current-tx-fn tx-fn
+                                      :w w*}
+                                     e))))
                   tx (cons
                       [:db/add 0 :schema/applied-migrations migration-keyword]
-                      (:datomic/tx (tx-fn
-                                    (assoc w
-                                           :datomic/db
-                                           db))))]
+                      (:datomic/tx result))]
               (try
                 @(d/transact con
                              tx)
                 (catch Exception e
                   (throw (ex-info
                           "simplemono.schema-migration.core/migrate! failed to transact"
-                          {:datomic/tx tx}
+                          {:datomic/tx tx
+                           :w w*}
                           e))))))
           (recur (rest migration-keywords))
           )))))
